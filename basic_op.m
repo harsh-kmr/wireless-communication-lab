@@ -1,0 +1,10 @@
+a = 5;
+b = 6;
+c = a+b;
+d = a-b;
+e = a*b;
+f = a/b;
+disp(c);
+disp(d);
+disp(e);
+disp(f);
