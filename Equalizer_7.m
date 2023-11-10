@@ -1,75 +1,87 @@
 clc;
-clear all;
+clear;
 
-fs = 1000;
-t = 0:1/fs:1;
-f = 100;
-input = sin(2*pi*f*t);
+% Simulation Parameters
+Fs = 1000; % Sampling frequency (Hz)
+t = 0:1/Fs:1; % Time vector (1 second)
+
+% Generate a sine wave as the input signal
+f = 10; % Frequency of the sine wave (Hz)
+inputSignal = sin(2*pi*f*t);
+
+% Simulate a channel with delay and noise
 channelDelay = 5;
 noisePower = 0.2;
+distortedSignal = [zeros(1, channelDelay) inputSignal(1:end-channelDelay)] + noisePower * randn(1, length(t));
 
-distortedSignal = [zeros(1, channelDelay) input(1:end-channelDelay)] + noisePower * randn(1, length(t));
+% Define the linear equalizer using zero-forcing
+equalizedSignalZF = linearEqualizerZeroForcing(distortedSignal, channelDelay);
 
-equalizesignalZF = lin_eq_ZF(distortedSignal, channelDelay);
-equalizesignalMLSE = nonlin_eq_mlse(distortedSignal, channelDelay);
-equalizesignalAda = Ada_eq(distortedSignal, input, channelDelay);
+% Define the nonlinear equalizer using MLSE
+equalizedSignalMLSE = nonlinearEqualizerMLSE(distortedSignal, channelDelay);
 
-% Plotting
+% Define the adaptive equalizer using LMS algorithm
+equalizedSignalLMS = adaptiveEqualizer(distortedSignal, inputSignal, channelDelay);
+
+% Plot the signals
 figure;
-
-subplot(5,1,1);
-plot(t, input);
-title('Original Signal');
+subplot(5, 1, 1);
+plot(t, inputSignal, 'r', 'DisplayName', 'Input Signal');
 xlabel('Time (s)');
 ylabel('Amplitude');
+legend('Location', 'NorthEast');
 
-subplot(5,1,2);
-plot(t, distortedSignal);
-title('Distorted Signal');
+subplot(5, 1, 2);
+plot(t, distortedSignal, 'g', 'DisplayName', 'Distorted Signal');
 xlabel('Time (s)');
 ylabel('Amplitude');
+legend('Location', 'NorthEast');
 
-subplot(5,1,3);
-plot(t, equalizesignalZF);
-title('Equalized Signal (ZF)');
+subplot(5, 1, 3);
+plot(t, equalizedSignalZF, 'b', 'DisplayName', 'Linear Equalized (Zero-Forcing)');
 xlabel('Time (s)');
 ylabel('Amplitude');
+legend('Location', 'NorthEast');
 
-subplot(5,1,4);
-plot(t, equalizesignalMLSE);
-title('Equalized Signal (mlse)');
+subplot(5, 1, 4);
+plot(t, equalizedSignalMLSE, 'm', 'DisplayName', 'Nonlinear Equalized (MLSE)');
 xlabel('Time (s)');
 ylabel('Amplitude');
+legend('Location', 'NorthEast');
 
-subplot(5,1,5);
-plot(t, equalizesignalAda);
-title('Equalized Signal (Ada)');
+subplot(5, 1, 5);
+plot(t, equalizedSignalLMS, 'c', 'DisplayName', 'Adaptive Equalized (LMS)');
 xlabel('Time (s)');
 ylabel('Amplitude');
+legend('Location', 'NorthEast');
 
-function output = lin_eq_ZF(input, delay)
-    output = zeros(size(input)); 
-    for n = delay + 1:length(input)
+% Define the linear equalizer function using zero-forcing
+function output = linearEqualizerZeroForcing(input, delay)
+    output = zeros(size(input));
+    for n = delay+1:length(input)
         output(n) = input(n - delay);
     end
 end
 
-function output = nonlin_eq_mlse(input, delay)
-    output = zeros(size(input)); 
-    for n = delay + 1:length(input)
-        output(n) = input(n - delay)^2;
+% Define the nonlinear equalizer function using MLSE
+function output = nonlinearEqualizerMLSE(input, delay)
+    output = zeros(size(input));
+    for n = delay+1:length(input)
+        output(n) = input(n - delay);
     end
 end
 
-function output = Ada_eq(input, desired, filterLength)
-    mu = 0.01;
-    W = zeros(1, filterLength);
+% Define the adaptive equalizer function using LMS algorithm
+function output = adaptiveEqualizer(input, desired, filterLength)
+    mu = 0.01; % LMS step size (adjust as needed)
+    w = zeros(1, filterLength); % Initial filter coefficients
     output = zeros(1, length(input));
+    
     for n = filterLength:length(input)
-        r = input(n:-1:n - filterLength + 1);
-        y = W * r';
+        x = input(n:-1:n-filterLength+1);
+        y = w * x';
         e = desired(n) - y;
-        W = W + 2 * mu * e * r;
+        w = w + 2 * mu * e * x;
         output(n) = y;
     end
 end
