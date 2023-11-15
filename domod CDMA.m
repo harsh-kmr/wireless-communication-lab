@@ -1,94 +1,85 @@
-clc;
-close all;
-clear all;
+n = 10;
+data = randi([0,1], 1,n);
+PRcode = randi([0,1], 1,n);
 
-%n=input('Enter the no. of bit : ');
-n = 10; % length of bit stream
-
-m = randi([0, 1], 1, n); % input bits
-c = randi([0, 1], 1, n); % pseudorandom code
-
-% Message signal points
 m0 = zeros(1, 100);
-m1 = ones(1, 100);
-
-% Code Signal points
-c0 = zeros(1, 10);
+m1 = ones(1,100);
+c0 = zeros(1,10);
 c1 = ones(1, 10);
 
-message = [];
-for i = 1:n
-    if m(i) == 0
-        message = [message, m0];
-    else
-        message = [message, m1];
-    end
-end
+time = 0.01: 0.01:n;
+t = 0.01:0.01:1;
 
+msg = [];
 code = [];
+cdma_mod = [];
+
 for i = 1:n
-    if c(i) == 0
-        code = [code, c0];
+    if data(i) == 1
+        msg = [msg, m1];
     else
+        msg = [msg, m0];
+    end
+
+    if PRcode(i) == 1
         code = [code, c1];
-    end
-end
-
-cdma = [];
-for i = 1:n
-    if m(i) == 0
-        cdma = [cdma, xor(m0, code)];
     else
-        cdma = [cdma, xor(m1, code)];
+        code = [code, c0];
     end
 end
 
-time = 0.01:0.01:n;
-tb = 0.01:0.01:1;
+
+for i = 1:n
+    if data(i) == 1
+        cdma_mod = [cdma_mod, xor(m1, code)];
+    else
+        cdma_mod = [cdma_mod, xor(m0, code)];
+    end
+end
 
 subplot(2, 3, 1);
-plot(time, message);
+plot(time, msg);
 title('Message Signal');
 
 subplot(2, 3, 2);
-plot(tb, code);
-title('Code Signal');
+plot(t, code);
+title('code signal');
 
 subplot(2, 3, 3);
-plot(time, cdma);
-title('CDMA Signal');
+plot(time, cdma_mod);
+title('cdma signal');
 
-M = abs(fft(message));
-CDMA = abs(fft(cdma));
+M = abs(fft(msg));
+CDMA = abs(fft(cdma_mod));
 
 subplot(2, 3, 4);
 plot(time, M);
-title('Message Frequency Spectrum');
+title('message Frequency Spectrum');
 
 subplot(2, 3, 6);
 plot(time, CDMA);
-title('CDMA Frequency Spectrum');
+title('cdma Frequency Spectrum');
 
-% Demodulation process
-demodulated = [];
+%demodulate
+
+msg_demod = [];
+
 for i = 1:n
-    if m(i) == 0
-        demodulated = [demodulated, xor(m0, cdma((i-1)*100+1:i*100))];
-    else
-        demodulated = [demodulated, xor(m1, cdma((i-1)*100+1:i*100))];
-    end
+    msg_demod = [msg_demod, xor(code, cdma_mod((i-1)*100+1:i*100))];
 end
 
-% Frequency spectrum of demodulated signal
-Demodulated_Freq = abs(fft(demodulated));
 
+% Frequency spectrum of demodulated signal
+Demodulated_Freq = abs(fft(msg_demod));
+
+% Plotting
 figure;
 subplot(2, 1, 1);
-plot(time, demodulated);
+plot(time, msg_demod);
 title('Demodulated Signal');
 
 subplot(2, 1, 2);
-stem(m, 'filled');
+plot(time,msg);
 title('Original Message Bits');
 
 figure;
