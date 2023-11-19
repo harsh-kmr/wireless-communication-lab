@@ -41,12 +41,3 @@
 7. **Usage:**
    - You can now use the Presidio Analyzer library in your projects.
 
-### Notes:
-
-- Make sure that Python is installed on your machine before following these steps.
-  
-- If there are any specific dependencies mentioned in the README or documentation, make sure they are installed before running the setup.
-
-- Provide the correct download link for the distribution package in step 1.
-
-This approach allows your friend to install the library on their machine without the need for an internet connection or access to a package repository. It's a simple and effective way to share your library within a closed environment.
